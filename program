@@ -26,6 +26,7 @@ Button.prototype.handleMouseClick = function() {
         this.onClick();
     }
 };
+
 //Ian's bitmoji
 var bitmojiH = 150;
 var drawBitmoji = function(bitmojiH,bitmojiX,bitmojiY){
@@ -72,6 +73,7 @@ var drawBitmoji = function(bitmojiH,bitmojiX,bitmojiY){
     drawBitmojiHead(bitmojiH,bitmojiX,bitmojiY);
     
 };
+
 // Nicholas drawBitmoji
 var drawNickSweatshirt = function(x,y,h) {
     // Ratio
@@ -145,6 +147,7 @@ var startButton = new Button({
     }
 });
 
+// Screens
 var drawSplashScreen = function () {
     background(255,255,255);
     
@@ -161,6 +164,7 @@ var drawSplashScreen = function () {
     startButton.draw();
 };
 
+// Khan Specials
 mouseClicked = function () {
     if (gameScreen === 0) {
         startButton.handleMouseClick();
