@@ -26,7 +26,52 @@ Button.prototype.handleMouseClick = function() {
         this.onClick();
     }
 };
+//Ian's bitmoji
+var bitmojiH = 150;
+var drawBitmoji = function(bitmojiH,bitmojiX,bitmojiY){
+  var drawBitmojiBody = function(bitmojiH,bitmojiX,bitmojiY){
+    fill(0, 0, 74);
+    rect(bitmojiX+(bitmojiH/150*150),bitmojiY+(bitmojiH/150*186),bitmojiH/150*100,bitmojiH/150*146); //body
+    fill(255, 255, 255);
+    text("IG", bitmojiX+bitmojiH/150*197,bitmojiY+bitmojiH/150*247, bitmojiH/150*218, bitmojiH/150*218);
+    textSize(bitmojiH/150);
+    
 
+};
+
+    var drawBitmojiHead = function(bitmojiH,bitmojiX,bitmojiY){
+        fill(0, 0, 0);
+    arc(bitmojiX+(bitmojiH/150*200),bitmojiY+(bitmojiH/150*134),bitmojiH/150*130,bitmojiH/150*130,-176,0); //headphones
+
+    fill(255, 205, 148);
+    ellipse(bitmojiX+bitmojiH/150*200,bitmojiY+bitmojiH/150*134,bitmojiH/150*100,bitmojiH/150*111); //face
+
+    fill(255, 255, 255);
+    arc(bitmojiX+bitmojiH/150*198,bitmojiY+bitmojiH/150*149,bitmojiH/150*38,bitmojiH/150*13,-23,187); //mouth
+
+    line(bitmojiX+(bitmojiH/150*178),bitmojiY+(bitmojiH/150*125),bitmojiX+(bitmojiH/150*219),bitmojiY+bitmojiH/150*122); //glass bridge
+
+    fill(185, 181, 255);
+    rect(bitmojiX+(bitmojiH/150*160),bitmojiY+(bitmojiH/150*100),bitmojiH/150*37,bitmojiH/150*32); //glass lens 1
+
+    fill(185,181,255);
+    rect(bitmojiX+bitmojiH/150*202,bitmojiY+bitmojiH/150*100,bitmojiH/150*37,bitmojiH/150*32); //glass lens 2
+
+    fill(94,72,30);
+    ellipse(bitmojiX+(bitmojiH/150*178),bitmojiY+(bitmojiH/150*114),bitmojiH/150*20,bitmojiH/150*20); //left eye
+
+    fill(94,72,30);
+    ellipse(bitmojiX+(bitmojiH/150*219),bitmojiY+(bitmojiH/150*114),bitmojiH/150*20,bitmojiH/150*20); //right eye
+
+    fill(0, 0, 0);
+    ellipse(bitmojiX+(bitmojiH/150*142),bitmojiY+(bitmojiH/150*131),bitmojiH/150*33,bitmojiH/150*54); //left earphone
+    ellipse(bitmojiX+(bitmojiH/150*260),bitmojiY+(bitmojiH/150*131),bitmojiH/150*33,bitmojiH/150*54); //right earphone
+    
+    };
+    drawBitmojiBody(bitmojiH,bitmojiX,bitmojiY);
+    drawBitmojiHead(bitmojiH,bitmojiX,bitmojiY);
+    
+};
 // Nicholas drawBitmoji
 var drawNickSweatshirt = function(x,y,h) {
     // Ratio
@@ -100,7 +145,6 @@ var startButton = new Button({
     }
 });
 
-// Screens
 var drawSplashScreen = function () {
     background(255,255,255);
     
@@ -112,12 +156,11 @@ var drawSplashScreen = function () {
     
     // Bitmojis
     drawNickBitmoji(350,350,100);
-    
+    drawBitmoji(88,-48,252);
     // Buttons
     startButton.draw();
 };
 
-// Khan Specials
 mouseClicked = function () {
     if (gameScreen === 0) {
         startButton.handleMouseClick();
