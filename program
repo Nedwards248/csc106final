@@ -1,0 +1,133 @@
+// Button Class
+var Button = function(config) {
+    this.x = config.x || 0;
+    this.y = config.y || 0;
+    this.width = config.width || 150;
+    this.height = config.height || 50;
+    this.label = config.label || "Click";
+    this.onClick = config.onClick || function() {};
+};
+Button.prototype.draw = function() {
+    fill(0, 234, 255);
+    rect(this.x, this.y, this.width, this.height, 5);
+    fill(0, 0, 0);
+    textSize(19);
+    textAlign(LEFT, TOP);
+    text(this.label, this.x+10, this.y+this.height/4);
+};
+Button.prototype.isMouseInside = function() {
+    return mouseX > this.x &&
+           mouseX < (this.x + this.width) &&
+           mouseY > this.y &&
+           mouseY < (this.y + this.height);
+};
+Button.prototype.handleMouseClick = function() {
+    if (this.isMouseInside()) {
+        this.onClick();
+    }
+};
+
+// Nicholas drawBitmoji
+var drawNickSweatshirt = function(x,y,h) {
+    // Ratio
+    var r = h/150;
+    
+    // // Sweatshirt
+    // Body
+    noStroke();
+    fill(150,150,150);
+    ellipse(x+0*r,y+75*r,150*r,80*r);
+    fill(255,255,255);
+    rect(x-3*r,y+50*r,6*r,50*r);
+    rect(x-75*r,y+75*r,150*r,40*r);
+    
+    // Head
+    fill(150,150,150);
+    stroke(0,0,0);
+    ellipse(x+0*r,y+15*r,75*r,100*r);
+};
+var drawNickFace = function(x,y,h) {
+    // Ratio
+    var r = h/150;
+    
+    // // Face
+    // Hair
+    fill(139,69,19);
+    ellipse(x+0*r,y+15*r,60*r,80*r);
+    
+    // Skin
+    noStroke();
+    fill(255,228,196);
+    ellipse(x+0*r,y+15*r,55*r,65*r);
+    
+    // Mouth
+    stroke(0,0,0);
+    fill(255,255,255);
+    arc(x+0*r,y+25*r,30*r,10*r,0,180);
+    noStroke();
+    fill(222,184,135);
+    arc(x+0*r,y+25*r,30*r,10*r,180,360);
+    
+    // Nose
+    stroke(0,0,0);
+    fill(255,228,196);
+    triangle(x+0*r,y+0*r,x-8*r,y+20*r,x+8*r,y+20*r);
+    
+    // Eyes
+    strokeWeight(3);
+    line(x-15*r,y+3*r,x-5*r,y+2*r);
+    line(x+15*r,y+3*r,x+5*r,y+2*r);
+    fill(255,228,196);
+    arc(x+10*r,y-2*r,15*r,2*r,180,360);
+    arc(x-10*r,y-2*r,15*r,2*r,180,360);
+    strokeWeight(1);
+};
+var drawNickBitmoji = function(x,y,h) {
+    drawNickSweatshirt(x,y,h);
+    drawNickFace(x,y,h);
+};
+
+// Global Variables
+var gameScreen = 0;
+
+// Buttons
+var startButton = new Button({
+    x:125,
+    y:200,
+    label: "Start",
+    onClick: function () {
+        gameScreen = 1;
+    }
+});
+
+// Screens
+var drawSplashScreen = function () {
+    background(255,255,255);
+    
+    // Title
+    fill(0,0,0);
+    textAlign(CENTER);
+    textSize(70);
+    text("Defend!",200,175);
+    
+    // Bitmojis
+    drawNickBitmoji(350,350,100);
+    
+    // Buttons
+    startButton.draw();
+};
+
+// Khan Specials
+mouseClicked = function () {
+    if (gameScreen === 0) {
+        startButton.handleMouseClick();
+    }
+};
+
+draw = function() {
+    if (gameScreen === 0) {
+        drawSplashScreen();
+    } else {
+        background(255, 0, 0);
+    }
+};
