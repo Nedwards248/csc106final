@@ -1,2 +1,2 @@
 # csc106final
-Making a game for csc 106
+Making a game for CSC 106
