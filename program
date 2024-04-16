@@ -35,7 +35,7 @@ Button.prototype.handleMouseClick = function() {
 var Bullet =  function(config) {
     this.x = config.x || 200;
     this.y = config.y || 200;
-    this.speed = config.speed || 1;
+    this.speed = config.speed || 5;
     
     // Math to figure out xSpeed and ySpeed
     var xRatio = config.xDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
