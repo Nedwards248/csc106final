@@ -35,7 +35,7 @@ Button.prototype.handleMouseClick = function() {
 var Bullet =  function(config) {
     this.x = config.x || 200;
     this.y = config.y || 200;
-    this.speed = config.speed || 5;
+    this.speed = config.speed || 1;
     
     // Math to figure out xSpeed and ySpeed
     var xRatio = config.xDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
@@ -239,17 +239,14 @@ var drawGameScreen = function () {
     for (var i = 0; i < bullets.length; i++) {
         bullets[i].draw();
         
-        // If out of bounds, mark it for deletion
+        // If out of bounds, delete it
         if (bullets[i].x < 0    ||
             bullets[i].x > 400  ||
             bullets[i].y < 0    ||
             bullets[i].y > 400) {
-            deleteBullets.push(i);
+            bullets.splice(i,1);
+            i--;
         }
-    }
-    // Deleting Bullets
-    for (var i = 0; i < deleteBullets.length; i++) {
-        bullets.splice(deleteBullets[i],1);
     }
     
     // Core
