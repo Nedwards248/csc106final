@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////
+/////////////////////////Classes and Bitmojis//////////////////////////
+///////////////////////////////////////////////////////////////////////
+
 // Button Class
 var Button = function(config) {
     this.x = config.x || 0;
@@ -25,6 +29,31 @@ Button.prototype.handleMouseClick = function() {
     if (this.isMouseInside()) {
         this.onClick();
     }
+};
+
+// Bullet Class
+var Bullet =  function(config) {
+    this.x = config.x || 200;
+    this.y = config.y || 200;
+    this.speed = config.speed || 5;
+    
+    // Math to figure out xSpeed and ySpeed
+    var xRatio = config.xDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
+    var yRatio = config.yDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
+    var mult = Math.sqrt(Math.pow(this.speed,2) / (Math.pow(xRatio,2) + Math.pow(yRatio,2)));
+    
+    this.xSpeed = xRatio * mult;
+    this.ySpeed = yRatio * mult;
+};
+Bullet.prototype.draw = function() {
+    // Draw
+    fill(0,0,0);
+    noStroke();
+    ellipse(this.x, this.y, 10, 10);
+    
+    // Move
+    this.x += this.xSpeed;
+    this.y += this.ySpeed;
 };
 
 //Ian's bitmoji
@@ -134,22 +163,40 @@ var drawNickBitmoji = function(x,y,h) {
     drawNickFace(x,y,h);
 };
 
+///////////////////////////////////////////////////////////////////////
+///////////////////////////Main Program////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
 // Global Variables
 var gameScreen = 0;
+var bullets = [];
+var lastTimeShot = 0;
+var grasses = [];
 
-// Buttons
-var startButton = new Button({
-    x:125,
-    y:200,
-    label: "Start",
-    onClick: function () {
-        gameScreen = 1;
+// Functions
+var generateGrass = function () {
+    grasses = [];
+    for (var i = 0; i < 50; i++) {
+        grasses.push({x: random(0,400), y: random(0,400)});
     }
-});
+};
 
 // Screens
 var drawSplashScreen = function () {
+    
+    // Background
     background(255,255,255);
+    
+    // Button
+    var startButton = new Button({
+        x:125,
+        y:200,
+        label: "Start",
+        onClick: function () {
+            generateGrass();
+            gameScreen = 1;
+        }
+    });
     
     // Title
     fill(0,0,0);
@@ -162,19 +209,59 @@ var drawSplashScreen = function () {
     drawBitmoji(88,-48,252);
     // Buttons
     startButton.draw();
-};
-
-// Khan Specials
-mouseClicked = function () {
-    if (gameScreen === 0) {
+    
+    // Handle Clicks
+    if (mouseIsPressed) {
         startButton.handleMouseClick();
     }
 };
+var drawGameScreen = function () {
+    
+    // Background
+    background(85, 189, 103);
+    for (var i = 0; i < grasses.length; i ++) {
+        stroke(6, 59, 10);
+        strokeWeight(2);
+        line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-15);
+        line(grasses[i].x-5, grasses[i].y, grasses[i].x-5, grasses[i].y-10);
+        line(grasses[i].x+5, grasses[i].y, grasses[i].x+5, grasses[i].y-10);
+    }
+    
+    // Shooting Bullets
+    if(millis() - lastTimeShot > 300) {
+        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200});
+        bullets.push(bullet);
+        lastTimeShot = millis();
+    }
+    
+    // Drawing Bullets
+    var deleteBullets = [];
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].draw();
+        
+        // If out of bounds, mark it for deletion
+        if (bullets[i].x < 0    ||
+            bullets[i].x > 400  ||
+            bullets[i].y < 0    ||
+            bullets[i].y > 400) {
+            deleteBullets.push(i);
+        }
+    }
+    // Deleting Bullets
+    for (var i = 0; i < deleteBullets.length; i++) {
+        bullets.splice(deleteBullets[i],1);
+    }
+    
+    // Core
+    imageMode(CENTER);
+    image(getImage("space/planet"),200,200,70,70);
+};
 
+// Khan Specials
 draw = function() {
     if (gameScreen === 0) {
         drawSplashScreen();
     } else {
-        background(255, 0, 0);
+        drawGameScreen();
     }
 };
