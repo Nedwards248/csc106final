@@ -517,6 +517,7 @@ var drawGameScreen = function () {
     for (var i = 0; i < life; i++) {
         image(getImage("space/healthheart"),290+40*i,30,30,30);
     }
+    imageMode(CENTER);
     image(getImage("cute/GemOrange"),25,25,30,50);
     textAlign(LEFT);
     fill(0,0,0);
