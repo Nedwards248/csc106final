@@ -1,0 +1,37 @@
+var shopItem = [
+    {
+    name: "Bomb",
+    price: 1000,
+    quantity: 5
+    },
+    {
+    name: "Health Boost",
+    price: 2000,
+    quantity: 2
+    },
+    {
+    name: "Freeze Enemies",
+    price: 10000,
+    quantity: 1
+    }
+];
+var playerWallet = 0;
+fill(0, 0, 0);
+text(playerWallet, 380, 20);
+
+for (var i = 0; i < shopItem.length; ++i)
+{
+    fill(255, 102, 102);
+    rect(i*100+10, 20, 90, 100);
+    fill(0, 0, 0);
+    text(shopItem[i].name, i*100+15, 30, 60, 60);
+    text(shopItem[i].price, i*100+20, 90);
+    if(playerWallet >= shopItem[i].price){
+        playerWallet -= shopItem[i].price;
+        shopItem[i].quantity -= 1;
+    }
+    if(shopItem[i].quantity === 0)
+    {
+        
+    }
+}
