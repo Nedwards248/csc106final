@@ -46,17 +46,83 @@ var Bullet =  function(config) {
     this.ySpeed = yRatio * mult;
 };
 Bullet.prototype.draw = function() {
+    // Move
+    this.x += this.xSpeed;
+    this.y += this.ySpeed;
+    
     // Draw
     fill(0,0,0);
     noStroke();
     ellipse(this.x, this.y, 10, 10);
+};
+
+// Bullet Class
+var Enemy =  function(config) {
+    // Randomly spawn outside of screen
+    var dir = floor(random(0,4));
+    if (dir === 0) {
+        this.x = random(-50,450);
+        this.y = -50;
+    } else if (dir === 1) {
+        this.x = 450;
+        this.y = random(-50,450);
+    } else if (dir === 2) {
+        this.x = random(-50,450);
+        this.y = 450;
+    } else if (dir === 3) {
+        this.x = -50;
+        this.y = random(-50,450);
+    }
+    this.speed = config.speed || 1;
     
+    // Math to figure out xSpeed and ySpeed
+    var xDis = 200 - this.x;
+    var yDis = 200 - this.y;
+    var xRatio = xDis / (Math.abs(xDis) + Math.abs(yDis));
+    var yRatio = yDis / (Math.abs(xDis) + Math.abs(yDis));
+    var mult = Math.sqrt(Math.pow(this.speed,2) / (Math.pow(xRatio,2) + Math.pow(yRatio,2)));
+    
+    this.xSpeed = xRatio * mult;
+    this.ySpeed = yRatio * mult;
+};
+Enemy.prototype.draw = function() {
     // Move
     this.x += this.xSpeed;
     this.y += this.ySpeed;
+    
+    // Draw
+    fill(122, 33, 33);
+    noStroke();
+    ellipse(this.x, this.y, 25, 25);
+};
+Enemy.prototype.bulletCollision = function(bullet) {
+    // Finding distance
+    var xDis = Math.abs(this.x - bullet.x);
+    var yDis = Math.abs(this.y - bullet.y);
+    var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+    
+    // If close enough, return true
+    if (dis < 17.5) {
+        return true;
+    } else {
+        return false;
+    }
+};
+Enemy.prototype.coreCollision = function() {
+    // Finding distance
+    var xDis = Math.abs(this.x - 200);
+    var yDis = Math.abs(this.y - 200);
+    var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+    
+    // If close enough, return true
+    if (dis < 37.5) {
+        return true;
+    } else {
+        return false;
+    }
 };
 
-//Ian's bitmoji
+// Ian's bitmoji
 var bitmojiH = 150;
 var drawBitmoji = function(bitmojiH,bitmojiX,bitmojiY){
   var drawBitmojiBody = function(bitmojiH,bitmojiX,bitmojiY){
@@ -171,6 +237,10 @@ var drawNickBitmoji = function(x,y,h) {
 var gameScreen = 0;
 var bullets = [];
 var lastTimeShot = 0;
+var enemies = [];
+var lastTimeEnemySpawn = 0;
+var life = 3;
+var money = 0;
 var grasses = [];
 
 // Functions
@@ -217,6 +287,48 @@ var drawSplashScreen = function () {
 };
 var drawGameScreen = function () {
     
+    //// Logistics
+    
+    // Shooting Bullets
+    if(millis() - lastTimeShot > 300) {
+        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200});
+        bullets.push(bullet);
+        lastTimeShot = millis();
+    }
+    
+    // Spawing Enemies
+    if(millis() - lastTimeEnemySpawn > 3000) {
+        var enemy = new Enemy({});
+        enemies.push(enemy);
+        lastTimeEnemySpawn = millis();
+    }
+    
+    // Collisions
+    for (var i = 0; i < enemies.length; i++) {
+        // Core
+        var coreHit = enemies[i].coreCollision();
+        if (coreHit) {
+            enemies.splice(i,1);
+            i--;
+            life--;
+        } else {
+            for (var j = 0; j < bullets.length; j++) {
+                // Bullets
+                var bulletHit = enemies[i].bulletCollision(bullets[j]);
+                if (bulletHit) {
+                    bullets.splice(j,1);
+                    j--;
+                    enemies.splice(i,1);
+                    i--;
+                    money += 10;
+                    break;
+                }
+            }
+        }
+    }
+    
+    //// Drawing
+    
     // Background
     background(85, 189, 103);
     for (var i = 0; i < grasses.length; i ++) {
@@ -227,15 +339,7 @@ var drawGameScreen = function () {
         line(grasses[i].x+5, grasses[i].y, grasses[i].x+5, grasses[i].y-10);
     }
     
-    // Shooting Bullets
-    if(millis() - lastTimeShot > 300) {
-        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200});
-        bullets.push(bullet);
-        lastTimeShot = millis();
-    }
-    
-    // Drawing Bullets
-    var deleteBullets = [];
+    // Bullets
     for (var i = 0; i < bullets.length; i++) {
         bullets[i].draw();
         
@@ -249,16 +353,42 @@ var drawGameScreen = function () {
         }
     }
     
+    // Enemies
+    for (var i = 0; i < enemies.length; i++) {
+        enemies[i].draw();
+    }
+    
     // Core
     imageMode(CENTER);
     image(getImage("space/planet"),200,200,70,70);
+    
+    // Shadow
+    image(getImage("cute/ShadowEast"),-600,180,2000,900);
+    
+    // Information
+    for (var i = 0; i < life; i++) {
+        image(getImage("space/healthheart"),290+40*i,30,30,30);
+    }
+    image(getImage("cute/GemOrange"),25,25,30,50);
+    textAlign(CENTER);
+    fill(0,0,0);
+    textSize(30);
+    text(money,70,45);
+    
+    // Game Over Check
+    if (life < 1) {
+        gameScreen = 2;
+    }
 };
 
 // Khan Specials
 draw = function() {
     if (gameScreen === 0) {
         drawSplashScreen();
-    } else {
+    } else if (gameScreen === 1) {
         drawGameScreen();
+    } else if (gameScreen === 2) {
+        background(255,0,0);
+        text("Game Over", 200, 200);
     }
 };
