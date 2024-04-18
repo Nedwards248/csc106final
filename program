@@ -35,28 +35,191 @@ Button.prototype.handleMouseClick = function() {
 var Bullet =  function(config) {
     this.x = config.x || 200;
     this.y = config.y || 200;
+    this.damage = config.damage || 50;
     this.speed = config.speed || 5;
+    this.size = config.size || 10;
+    this.color = config.color || color(0,0,0);
+    
+    // Really should config these before firing
+    this.xDis = config.xDis || 1;
+    this.yDis = config.yDis || 1;
     
     // Math to figure out xSpeed and ySpeed
-    var xRatio = config.xDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
-    var yRatio = config.yDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
+    var xRatio = this.xDis / (Math.abs(this.xDis) + Math.abs(this.yDis));
+    var yRatio = this.yDis / (Math.abs(this.xDis) + Math.abs(this.yDis));
     var mult = Math.sqrt(Math.pow(this.speed,2) / (Math.pow(xRatio,2) + Math.pow(yRatio,2)));
     
     this.xSpeed = xRatio * mult;
     this.ySpeed = yRatio * mult;
 };
 Bullet.prototype.draw = function() {
-    // Draw
-    fill(0,0,0);
-    noStroke();
-    ellipse(this.x, this.y, 10, 10);
-    
     // Move
     this.x += this.xSpeed;
     this.y += this.ySpeed;
+    
+    // Draw
+    fill(this.color);
+    noStroke();
+    ellipse(this.x, this.y, this.size, this.size);
 };
 
-//Ian's bitmoji
+// Enemy Class
+var Enemy =  function(config) {
+    // Randomly spawn outside of screen
+    var dir = floor(random(0,4));
+    if (dir === 0) {
+        this.x = random(-50,450);
+        this.y = -50;
+    } else if (dir === 1) {
+        this.x = 450;
+        this.y = random(-50,450);
+    } else if (dir === 2) {
+        this.x = random(-50,450);
+        this.y = 450;
+    } else if (dir === 3) {
+        this.x = -50;
+        this.y = random(-50,450);
+    }
+    this.strength = config.strength || 1;
+    this.maxHealth = config.maxHealth || 100;
+    this.currentHealth = this.maxHealth;
+    this.speed = config.speed || 1;
+    this.image = config.image || getImage("avatars/piceratops-seed");
+    this.size = config.size || 40;
+    this.money = config.money || 10;
+    
+    // Math to figure out xSpeed and ySpeed
+    var xDis = 200 - this.x;
+    var yDis = 200 - this.y;
+    var xRatio = xDis / (Math.abs(xDis) + Math.abs(yDis));
+    var yRatio = yDis / (Math.abs(xDis) + Math.abs(yDis));
+    var mult = Math.sqrt(Math.pow(this.speed,2) / (Math.pow(xRatio,2) + Math.pow(yRatio,2)));
+    
+    this.xSpeed = xRatio * mult;
+    this.ySpeed = yRatio * mult;
+};
+Enemy.prototype.draw = function() {
+    // Move
+    this.x += this.xSpeed;
+    this.y += this.ySpeed;
+    
+    //// Draw
+    
+    // Health
+    fill(255,0,0);
+    noStroke();
+    rectMode(LEFT);
+    var healthRatio = this.currentHealth / this.maxHealth;
+    rect(this.x-this.size/2, this.y-6*this.size/10, this.size*healthRatio, this.size/5);
+    noFill();
+    stroke(0,0,0);
+    strokeWeight(1);
+    rectMode(CENTER);
+    rect(this.x, this.y-this.size/2, this.size, this.size/5);
+    
+    // Creature
+    imageMode(CENTER);
+    image(this.image, this.x, this.y, this.size, this.size);
+};
+Enemy.prototype.bulletCollision = function(bullet) {
+    // Finding distance
+    var xDis = Math.abs(this.x - bullet.x);
+    var yDis = Math.abs(this.y - bullet.y);
+    var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+    
+    // If close enough, return true (minus 5 for better visuals)
+    if (dis < this.size/2 + bullet.size/2 - 5) {
+        this.currentHealth -= bullet.damage;
+        if (this.currentHealth <= 0) {
+            return 2;
+        } else {
+            return 1;
+        }
+    } else {
+        return 0;
+    }
+};
+Enemy.prototype.coreCollision = function() {
+    // Finding distance
+    var xDis = Math.abs(this.x - 200);
+    var yDis = Math.abs(this.y - 200);
+    var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+    
+    // If close enough, return true (plus 10 for better visuals)
+    if (dis < this.size/2 + 10) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+// Tower Class
+var Tower = function(config, bullet) {
+    this.x = config.x || 100;
+    this.y = config.y || 100;
+    this.range = config.range || 200;
+    this.fireRate = config.fireRate || 1000;
+    this.lastTimeShot = 0;
+    this.image = config.image || getImage("cute/WallBlockTall");
+    this.size = config.size || 30;
+    this.bullet = bullet || new Bullet({x: this.x, y: this.y});
+};
+Tower.prototype.draw = function() {
+    // Draw
+    imageMode(CENTER);
+    image(this.image, this.x, this.y, this.size, this.size);
+};
+Tower.prototype.shoot = function(enemies) {
+    // Reseting
+    this.resetBullet();
+    this.lastTimeShot = millis();
+    
+    // Checking Basics
+    var minDis;
+    var minIndex;
+    if (enemies.length !== 0) {
+        var xDis = Math.abs(this.x - enemies[0].x);
+        var yDis = Math.abs(this.y - enemies[0].y);
+        var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+        
+        minDis = dis;
+        minIndex = 0;
+    } else {
+        // Send out of screen
+        this.bullet.x = 500;
+        this.bullet = new Bullet(this.bullet);
+        return this.bullet;
+    }
+    
+    // Finding closest
+    for (var i = 1; i < enemies.length; i++) {
+        var xDis = Math.abs(this.x - enemies[i].x);
+        var yDis = Math.abs(this.y - enemies[i].y);
+        var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
+        
+        if (dis < minDis) {
+            minDis = dis;
+            minIndex = i;
+        }
+    }
+    
+    // Producing bullet if in range
+    if (minDis < this.range) {
+        this.bullet.xDis = enemies[minIndex].x - this.x;
+        this.bullet.yDis = enemies[minIndex].y - this.y;
+    } else {
+        // Send out of screen
+        this.bullet.x = 500;
+    }
+    this.bullet = new Bullet(this.bullet);
+    return this.bullet;
+};
+Tower.prototype.resetBullet = function() {
+    this.bullet.x = this.x;
+    this.bullet.y = this.y;
+};
+
+// Ian's bitmoji
 var bitmojiH = 150;
 var drawBitmoji = function(bitmojiH,bitmojiX,bitmojiY){
   var drawBitmojiBody = function(bitmojiH,bitmojiX,bitmojiY){
@@ -167,36 +330,60 @@ var drawNickBitmoji = function(x,y,h) {
 ///////////////////////////Main Program////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-// Global Variables
+// Basics
 var gameScreen = 0;
+var life = 3;
+var money = 1000;
+
+// Game Specific
+var wave = 1;
+var coreFireRate = 500;
 var bullets = [];
 var lastTimeShot = 0;
-var grasses = [];
+var enemies = [];
+var lastTimeEnemySpawn = 0;
+var enemySpawnRate = 1000;
+var towers = [];
+var isPlacingTower = false;
+var towerToBePlaced;
 
-// Functions
+// Misc
+var grasses = [];
 var generateGrass = function () {
     grasses = [];
     for (var i = 0; i < 50; i++) {
         grasses.push({x: random(0,400), y: random(0,400)});
     }
 };
+generateGrass();
 
 // Screens
 var drawSplashScreen = function () {
     
-    // Background
-    background(255,255,255);
+    //// Logistics
     
-    // Button
+    // Buttons
     var startButton = new Button({
         x:125,
         y:200,
         label: "Start",
         onClick: function () {
-            generateGrass();
             gameScreen = 1;
         }
     });
+    
+    // Handle Clicks
+    if (mouseIsPressed) {
+        startButton.handleMouseClick();
+    }
+
+    //// Drawing
+    
+    // Background
+    background(255,255,255);
+    
+    // Button
+    startButton.draw();
     
     // Title
     fill(0,0,0);
@@ -206,16 +393,80 @@ var drawSplashScreen = function () {
     
     // Bitmojis
     drawNickBitmoji(350,350,100);
-    drawBitmoji(88,-48,252);
-    // Buttons
-    startButton.draw();
-    
-    // Handle Clicks
-    if (mouseIsPressed) {
-        startButton.handleMouseClick();
-    }
+    drawBitmoji(90,-55,250);
 };
 var drawGameScreen = function () {
+    
+    //// Logistics
+    
+    // Building
+    if (keyIsPressed && !isPlacingTower) {
+        if (key.toString() === "1" && money >= 50) {
+            var bullet = new Bullet({});
+            towerToBePlaced = new Tower({x: mouseX, y:mouseY}, bullet);
+            isPlacingTower = true;
+            money -= 50;
+        }
+    }
+    if (mouseIsPressed && !keyIsPressed && isPlacingTower) {
+        towers.push(towerToBePlaced);
+        isPlacingTower = false;
+    }
+    
+    // Core Shooting Bullets
+    if (millis() - lastTimeShot > coreFireRate) {
+        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200, damage: 100});
+        bullets.push(bullet);
+        lastTimeShot = millis();
+    }
+    
+    // Towers Shooting Bullets
+    for (var i = 0; i < towers.length; i++) {
+        if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
+            bullets.push(towers[i].shoot(enemies));
+        }
+    }
+    
+    // Spawing Enemies
+    if (millis() - lastTimeEnemySpawn > enemySpawnRate) {
+        var enemy = new Enemy({});
+        enemies.push(enemy);
+        lastTimeEnemySpawn = millis();
+    }
+    
+    // Collisions
+    for (var i = 0; i < enemies.length; i++) {
+        // Core
+        var coreHit = enemies[i].coreCollision();
+        if (coreHit) {
+            enemies.splice(i,1);
+            i--;
+            life--;
+        } else {
+            for (var j = 0; j < bullets.length; j++) {
+                // Bullets
+                var bulletHit = enemies[i].bulletCollision(bullets[j]);
+                if (bulletHit === 2) {
+                    money += enemies[i].money;
+                    bullets.splice(j,1);
+                    j--;
+                    enemies.splice(i,1);
+                    i--;
+                    break;
+                } else if (bulletHit === 1) {
+                    bullets.splice(j,1);
+                    j--;
+                }
+            }
+        }
+    }
+    
+    // Game Over Check
+    if (life < 1) {
+        gameScreen = 2;
+    }
+    
+    //// Drawing
     
     // Background
     background(85, 189, 103);
@@ -227,41 +478,70 @@ var drawGameScreen = function () {
         line(grasses[i].x+5, grasses[i].y, grasses[i].x+5, grasses[i].y-10);
     }
     
-    // Shooting Bullets
-    if(millis() - lastTimeShot > 300) {
-        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200});
-        bullets.push(bullet);
-        lastTimeShot = millis();
+    // Preview of placing tower
+    if (isPlacingTower) {
+        // Following Mouse
+        towerToBePlaced.x = mouseX;
+        towerToBePlaced.y = mouseY;
+        
+        // Drawing preview and range
+        towerToBePlaced.draw();
+        noFill();
+        ellipse(mouseX, mouseY, towerToBePlaced.range*2, towerToBePlaced.range*2);
     }
     
-    // Drawing Bullets
-    var deleteBullets = [];
+    // Towers
+    for (var i = 0; i < towers.length; i++) {
+        towers[i].draw();
+    }
+    
+    // Bullets
     for (var i = 0; i < bullets.length; i++) {
         bullets[i].draw();
         
-        // If out of bounds, mark it for deletion
+        // If out of bounds, delete it
         if (bullets[i].x < 0    ||
             bullets[i].x > 400  ||
             bullets[i].y < 0    ||
             bullets[i].y > 400) {
-            deleteBullets.push(i);
+            bullets.splice(i,1);
+            i--;
         }
     }
-    // Deleting Bullets
-    for (var i = 0; i < deleteBullets.length; i++) {
-        bullets.splice(deleteBullets[i],1);
+    
+    // Enemies
+    for (var i = 0; i < enemies.length; i++) {
+        enemies[i].draw();
     }
     
     // Core
     imageMode(CENTER);
     image(getImage("space/planet"),200,200,70,70);
+    
+    // Shadow
+    image(getImage("cute/ShadowEast"),-600,180,2000,900);
+    
+    // Information
+    for (var i = 0; i < life; i++) {
+        image(getImage("space/healthheart"),290+40*i,30,30,30);
+    }
+    imageMode(CENTER);
+    image(getImage("cute/GemOrange"),25,25,30,50);
+    textAlign(LEFT);
+    fill(0,0,0);
+    textSize(30);
+    text(money,45,45);
 };
 
 // Khan Specials
 draw = function() {
     if (gameScreen === 0) {
         drawSplashScreen();
-    } else {
+    } else if (gameScreen === 1) {
         drawGameScreen();
+    } else if (gameScreen === 2) {
+        background(255,0,0);
+        textAlign(CENTER);
+        text("Game Over", 200, 200);
     }
 };
