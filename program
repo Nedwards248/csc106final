@@ -40,9 +40,13 @@ var Bullet =  function(config) {
     this.size = config.size || 10;
     this.color = config.color || color(0,0,0);
     
+    // Really should config these before firing
+    this.xDis = config.xDis || 1;
+    this.yDis = config.yDis || 1;
+    
     // Math to figure out xSpeed and ySpeed
-    var xRatio = config.xDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
-    var yRatio = config.yDis / (Math.abs(config.xDis) + Math.abs(config.yDis));
+    var xRatio = this.xDis / (Math.abs(this.xDis) + Math.abs(this.yDis));
+    var yRatio = this.yDis / (Math.abs(this.xDis) + Math.abs(this.yDis));
     var mult = Math.sqrt(Math.pow(this.speed,2) / (Math.pow(xRatio,2) + Math.pow(yRatio,2)));
     
     this.xSpeed = xRatio * mult;
@@ -150,16 +154,15 @@ Enemy.prototype.coreCollision = function() {
 };
 
 // Tower Class
-var Tower = function(config) {
+var Tower = function(config, bullet) {
     this.x = config.x || 100;
     this.y = config.y || 100;
     this.range = config.range || 200;
-    this.bulletDamage = config.bulletDamage || 100;
-    this.bulletSpeed = 3 + this.range / 50;
     this.fireRate = config.fireRate || 1000;
     this.lastTimeShot = 0;
     this.image = config.image || getImage("cute/WallBlockTall");
     this.size = config.size || 30;
+    this.bullet = bullet || new Bullet({x: this.x, y: this.y});
 };
 Tower.prototype.draw = function() {
     // Draw
@@ -167,6 +170,10 @@ Tower.prototype.draw = function() {
     image(this.image, this.x, this.y, this.size, this.size);
 };
 Tower.prototype.shoot = function(enemies) {
+    // Reseting
+    this.resetBullet();
+    this.lastTimeShot = millis();
+    
     // Checking Basics
     var minDis;
     var minIndex;
@@ -179,8 +186,9 @@ Tower.prototype.shoot = function(enemies) {
         minIndex = 0;
     } else {
         // Send out of screen
-        var bullet = new Bullet({x: 500, xDis: 1 , yDis: 1});
-        return bullet;
+        this.bullet.x = 500;
+        this.bullet = new Bullet(this.bullet);
+        return this.bullet;
     }
     
     // Finding closest
@@ -196,18 +204,19 @@ Tower.prototype.shoot = function(enemies) {
     }
     
     // Producing bullet if in range
-    var bullet;
     if (minDis < this.range) {
-        bullet = new Bullet({x: this.x,
-                             y: this.y,
-                             speed: this.bulletSpeed,
-                             xDis: enemies[minIndex].x - this.x, 
-                             yDis: enemies[minIndex].y - this.y});
+        this.bullet.xDis = enemies[minIndex].x - this.x;
+        this.bullet.yDis = enemies[minIndex].y - this.y;
     } else {
         // Send out of screen
-        bullet = new Bullet({x: 500, xDis: 1 , yDis: 1});
+        this.bullet.x = 500;
     }
-    return bullet;
+    this.bullet = new Bullet(this.bullet);
+    return this.bullet;
+};
+Tower.prototype.resetBullet = function() {
+    this.bullet.x = this.x;
+    this.bullet.y = this.y;
 };
 
 // Ian's bitmoji
@@ -393,7 +402,8 @@ var drawGameScreen = function () {
     // Building
     if (keyIsPressed && !isPlacingTower) {
         if (key.toString() === "1" && money >= 50) {
-            towerToBePlaced = new Tower({x: mouseX, y:mouseY});
+            var bullet = new Bullet({});
+            towerToBePlaced = new Tower({x: mouseX, y:mouseY}, bullet);
             isPlacingTower = true;
             money -= 50;
         }
@@ -405,7 +415,7 @@ var drawGameScreen = function () {
     
     // Core Shooting Bullets
     if (millis() - lastTimeShot > coreFireRate) {
-        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200});
+        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200, damage: 100});
         bullets.push(bullet);
         lastTimeShot = millis();
     }
@@ -413,9 +423,7 @@ var drawGameScreen = function () {
     // Towers Shooting Bullets
     for (var i = 0; i < towers.length; i++) {
         if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
-            var bullet = towers[i].shoot(enemies);
-            bullets.push(bullet);
-            towers[i].lastTimeShot = millis();
+            bullets.push(towers[i].shoot(enemies));
         }
     }
     
