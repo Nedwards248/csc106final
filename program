@@ -334,7 +334,7 @@ var drawNickBitmoji = function(x,y,h) {
 var gameScreen = 0;
 var life = 3;
 var money = 1000;
-
+var shopOpen = false;
 // Game Specific
 var wave = 1;
 var coreFireRate = 500;
@@ -371,12 +371,36 @@ var drawSplashScreen = function () {
             gameScreen = 1;
         }
     });
+    var close = new Button({
+        x:20,
+        y:10,
+        label: "Close",
+        onClick: function () {
+            shopOpen = false;
+        }
+    });
+    var shop = new Button({
+        x:20,
+        y:10,
+        label: "Shop",
+        onClick: function () {
+            shopOpen = true;
+            
+        } 
+    });
     
     // Handle Clicks
-    if (mouseIsPressed) {
+    if (mouseIsPressed && gameScreen === 0) {
         startButton.handleMouseClick();
     }
-
+    mouseClicked = function() {
+        if(shopOpen === false) {
+            shop.handleMouseClick();
+        }
+        else {
+            close.handleMouseClick();
+        }
+    };
     //// Drawing
     
     // Background
@@ -398,7 +422,32 @@ var drawSplashScreen = function () {
 var drawGameScreen = function () {
     
     //// Logistics
-    
+    // Shop
+    if(shopOpen === false)
+        {
+            shop.draw();
+            fill(0, 0, 0);
+        }
+        if(shopOpen === true){
+            fill(0, 255, 128);
+            rect(7,66,350,150);
+            fill(0, 0, 0);
+            close.draw();
+        for (var i = 0; i < shopItem.length; ++i)
+        {
+            fill(255, 102, 102);
+            rect(i*100+10, 75, 90, 100);
+            fill(0, 0, 0);
+            text(shopItem[i].name, i*100+20, 80, 60, 60);
+            text(shopItem[i].price, i*100+20, 150);
+            image(shopItem[i].image, i*100+20,98, 50, 50);
+            if(mouseIsPressed && mouseX > 10 && mouseX < 100 && mouseY > 70 && mouseY < 170){
+            if(shopItem[i].price <= money){
+                money -= shopItem[i].price;
+            }
+            }
+        }
+    }
     // Building
     if (keyIsPressed && !isPlacingTower) {
         if (key.toString() === "1" && money >= 50) {
