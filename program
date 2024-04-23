@@ -36,7 +36,6 @@ var Bullet =  function(config) {
     this.x = config.x || 200;
     this.y = config.y || 200;
     this.damage = config.damage || 50;
-    this.pierce = config.pierce || 1;
     this.speed = config.speed || 3;
     this.range = config.range || 400;
     this.distanceTraveled = 0;
