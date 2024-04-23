@@ -10,9 +10,11 @@ var Button = function(config) {
     this.height = config.height || 50;
     this.label = config.label || "Click";
     this.onClick = config.onClick || function() {};
+    this.color = config.color || color(0, 234, 255);
 };
 Button.prototype.draw = function() {
-    fill(0, 234, 255);
+    rectMode(LEFT);
+    fill(this.color);
     rect(this.x, this.y, this.width, this.height, 5);
     fill(0, 0, 0);
     textSize(19);
@@ -36,8 +38,10 @@ var Bullet =  function(config) {
     this.x = config.x || 200;
     this.y = config.y || 200;
     this.damage = config.damage || 50;
-    this.speed = config.speed || 5;
-    this.size = config.size || 10;
+    this.speed = config.speed || 3;
+    this.range = config.range || 400;
+    this.distanceTraveled = 0;
+    this.size = config.size || 7;
     this.color = config.color || color(0,0,0);
     
     // Really should config these before firing
@@ -52,15 +56,23 @@ var Bullet =  function(config) {
     this.xSpeed = xRatio * mult;
     this.ySpeed = yRatio * mult;
 };
-Bullet.prototype.draw = function() {
-    // Move
+Bullet.prototype.move = function() {
     this.x += this.xSpeed;
     this.y += this.ySpeed;
-    
-    // Draw
+    this.distanceTraveled += this.speed;
+};
+Bullet.prototype.draw = function() {
     fill(this.color);
     noStroke();
     ellipse(this.x, this.y, this.size, this.size);
+};
+Bullet.prototype.outOfRange = function() {
+    // Return true if out of range
+    if (this.distanceTraveled > this.range) {
+        return true;
+    } else {
+        return false;
+    }
 };
 
 // Enemy Class
@@ -80,12 +92,11 @@ var Enemy =  function(config) {
         this.x = -50;
         this.y = random(-50,450);
     }
-    this.strength = config.strength || 1;
     this.maxHealth = config.maxHealth || 100;
     this.currentHealth = this.maxHealth;
-    this.speed = config.speed || 1;
+    this.speed = config.speed || 0.4;
     this.image = config.image || getImage("avatars/piceratops-seed");
-    this.size = config.size || 40;
+    this.size = config.size || 25;
     this.money = config.money || 10;
     
     // Math to figure out xSpeed and ySpeed
@@ -127,16 +138,16 @@ Enemy.prototype.bulletCollision = function(bullet) {
     var yDis = Math.abs(this.y - bullet.y);
     var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
     
-    // If close enough, return true (minus 5 for better visuals)
-    if (dis < this.size/2 + bullet.size/2 - 5) {
+    // Finding what state the enemy is in
+    if (dis < this.size/2 + bullet.size/2) {
         this.currentHealth -= bullet.damage;
         if (this.currentHealth <= 0) {
-            return 2;
+            return "kill";
         } else {
-            return 1;
+            return "damage";
         }
     } else {
-        return 0;
+        return "miss";
     }
 };
 Enemy.prototype.coreCollision = function() {
@@ -145,11 +156,11 @@ Enemy.prototype.coreCollision = function() {
     var yDis = Math.abs(this.y - 200);
     var dis = Math.sqrt(Math.pow(xDis,2) + Math.pow(yDis,2));
     
-    // If close enough, return true (plus 10 for better visuals)
-    if (dis < this.size/2 + 10) {
-        return true;
+    // If close enough, return true (plus 5 for better visuals)
+    if (dis < this.size/2 + 5) {
+        return "damage";
     } else {
-        return false;
+        return "miss";
     }
 };
 
@@ -157,12 +168,19 @@ Enemy.prototype.coreCollision = function() {
 var Tower = function(config, bullet) {
     this.x = config.x || 100;
     this.y = config.y || 100;
-    this.range = config.range || 200;
+    this.range = config.range || 100;
     this.fireRate = config.fireRate || 1000;
     this.lastTimeShot = 0;
     this.image = config.image || getImage("cute/WallBlockTall");
-    this.size = config.size || 30;
-    this.bullet = bullet || new Bullet({x: this.x, y: this.y});
+    this.size = config.size || 15;
+    this.cost = config.cost || 50;
+    
+    // Making bullet
+    this.bullet = bullet;
+    this.bullet.x = this.x;
+    this.bullet.y = this.y;
+    this.bullet.speed = this.range*0.025;
+    this.bullet.range = this.range;
 };
 Tower.prototype.draw = function() {
     // Draw
@@ -211,6 +229,8 @@ Tower.prototype.shoot = function(enemies) {
         // Send out of screen
         this.bullet.x = 500;
     }
+    
+    // Return bullet
     this.bullet = new Bullet(this.bullet);
     return this.bullet;
 };
@@ -334,28 +354,81 @@ var drawNickBitmoji = function(x,y,h) {
 var gameScreen = 0;
 var life = 3;
 var money = 1000;
-var shopOpen = false;
+
 // Game Specific
-var wave = 1;
 var coreFireRate = 500;
 var bullets = [];
 var lastTimeShot = 0;
 var enemies = [];
 var lastTimeEnemySpawn = 0;
-var enemySpawnRate = 1000;
+var enemySpawnRate = 100000000;
 var towers = [];
 var isPlacingTower = false;
 var towerToBePlaced;
+var shopOpen = false;
+var shopItem = [
+    {
+    name: "Tower",
+    price: 50,
+    image: getImage("cute/WallBlockTall")
+    }
+];
+
+//// Towers
+
+// Basic
+var basicBullet = new Bullet({});
+var basicTower = new Tower({}, basicBullet);
+
+// Sniper
+var sniperBullet = new Bullet({damage: 100,
+                               color: color(255, 221, 0)});
+var sniperTower = new Tower({range: 200,
+                             image: getImage("cute/StoneBlockTall")}, 
+                             sniperBullet);
+
+// Flamethrower
+var flameThrowerBullet = new Bullet({damage: 20,
+                                     size: 20,
+                                     color: color(255, 140, 0)});
+var flameThrowerTower = new Tower({range: 75,
+                            fireRate: 50,
+                            image: getImage("cute/GemOrange")}, 
+                            flameThrowerBullet);
+
+//// End
 
 // Misc
 var grasses = [];
 var generateGrass = function () {
     grasses = [];
-    for (var i = 0; i < 50; i++) {
+    for (var i = 0; i < 100; i++) {
         grasses.push({x: random(0,400), y: random(0,400)});
     }
 };
 generateGrass();
+
+// Buttons
+var close = new Button({
+    x:20,
+    y:10,
+    label: "Close",
+    color: color(255, 248, 56),
+    onClick: function () {
+        shopOpen = false;
+    }
+    
+});
+var shop = new Button({
+        x:20,
+        y:10,
+        label: "Shop",
+        color: color(255, 248, 56),
+        onClick: function () {
+            shopOpen = true;
+            
+        } 
+    });
 
 // Screens
 var drawSplashScreen = function () {
@@ -371,36 +444,12 @@ var drawSplashScreen = function () {
             gameScreen = 1;
         }
     });
-    var close = new Button({
-        x:20,
-        y:10,
-        label: "Close",
-        onClick: function () {
-            shopOpen = false;
-        }
-    });
-    var shop = new Button({
-        x:20,
-        y:10,
-        label: "Shop",
-        onClick: function () {
-            shopOpen = true;
-            
-        } 
-    });
     
     // Handle Clicks
-    if (mouseIsPressed && gameScreen === 0) {
+    if (mouseIsPressed) {
         startButton.handleMouseClick();
     }
-    mouseClicked = function() {
-        if(shopOpen === false) {
-            shop.handleMouseClick();
-        }
-        else {
-            close.handleMouseClick();
-        }
-    };
+
     //// Drawing
     
     // Background
@@ -422,45 +471,6 @@ var drawSplashScreen = function () {
 var drawGameScreen = function () {
     
     //// Logistics
-    // Shop
-    if(shopOpen === false)
-        {
-            shop.draw();
-            fill(0, 0, 0);
-        }
-        if(shopOpen === true){
-            fill(0, 255, 128);
-            rect(7,66,350,150);
-            fill(0, 0, 0);
-            close.draw();
-        for (var i = 0; i < shopItem.length; ++i)
-        {
-            fill(255, 102, 102);
-            rect(i*100+10, 75, 90, 100);
-            fill(0, 0, 0);
-            text(shopItem[i].name, i*100+20, 80, 60, 60);
-            text(shopItem[i].price, i*100+20, 150);
-            image(shopItem[i].image, i*100+20,98, 50, 50);
-            if(mouseIsPressed && mouseX > 10 && mouseX < 100 && mouseY > 70 && mouseY < 170){
-            if(shopItem[i].price <= money){
-                money -= shopItem[i].price;
-            }
-            }
-        }
-    }
-    // Building
-    if (keyIsPressed && !isPlacingTower) {
-        if (key.toString() === "1" && money >= 50) {
-            var bullet = new Bullet({});
-            towerToBePlaced = new Tower({x: mouseX, y:mouseY}, bullet);
-            isPlacingTower = true;
-            money -= 50;
-        }
-    }
-    if (mouseIsPressed && !keyIsPressed && isPlacingTower) {
-        towers.push(towerToBePlaced);
-        isPlacingTower = false;
-    }
     
     // Core Shooting Bullets
     if (millis() - lastTimeShot > coreFireRate) {
@@ -487,26 +497,32 @@ var drawGameScreen = function () {
     for (var i = 0; i < enemies.length; i++) {
         // Core
         var coreHit = enemies[i].coreCollision();
-        if (coreHit) {
+        if (coreHit === "damage") {
             enemies.splice(i,1);
             i--;
             life--;
-        } else {
+        } else if (coreHit === "miss") {
             for (var j = 0; j < bullets.length; j++) {
                 // Bullets
                 var bulletHit = enemies[i].bulletCollision(bullets[j]);
-                if (bulletHit === 2) {
+                if (bulletHit === "kill") {
                     money += enemies[i].money;
                     bullets.splice(j,1);
                     j--;
                     enemies.splice(i,1);
                     i--;
                     break;
-                } else if (bulletHit === 1) {
+                } else if (bulletHit === "damage") {
                     bullets.splice(j,1);
                     j--;
+                } else if (bulletHit === "miss") {
+                    // Nothing Should happen
+                } else {
+                    println("Error: Bullet Collision");
                 }
             }
+        } else {
+            println("Error: Core Collision");
         }
     }
     
@@ -521,10 +537,10 @@ var drawGameScreen = function () {
     background(85, 189, 103);
     for (var i = 0; i < grasses.length; i ++) {
         stroke(6, 59, 10);
-        strokeWeight(2);
-        line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-15);
-        line(grasses[i].x-5, grasses[i].y, grasses[i].x-5, grasses[i].y-10);
-        line(grasses[i].x+5, grasses[i].y, grasses[i].x+5, grasses[i].y-10);
+        strokeWeight(1);
+        line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-10);
+        line(grasses[i].x-3, grasses[i].y, grasses[i].x-3, grasses[i].y-5);
+        line(grasses[i].x+3, grasses[i].y, grasses[i].x+3, grasses[i].y-5);
     }
     
     // Preview of placing tower
@@ -546,13 +562,15 @@ var drawGameScreen = function () {
     
     // Bullets
     for (var i = 0; i < bullets.length; i++) {
+        bullets[i].move();
         bullets[i].draw();
         
-        // If out of bounds, delete it
+        // If out of bounds, or out of the towers range, delete it
         if (bullets[i].x < 0    ||
             bullets[i].x > 400  ||
             bullets[i].y < 0    ||
-            bullets[i].y > 400) {
+            bullets[i].y > 400  ||
+            bullets[i].outOfRange()) {
             bullets.splice(i,1);
             i--;
         }
@@ -565,7 +583,7 @@ var drawGameScreen = function () {
     
     // Core
     imageMode(CENTER);
-    image(getImage("space/planet"),200,200,70,70);
+    image(getImage("space/planet"),200,200,50,50);
     
     // Shadow
     image(getImage("cute/ShadowEast"),-600,180,2000,900);
@@ -575,11 +593,35 @@ var drawGameScreen = function () {
         image(getImage("space/healthheart"),290+40*i,30,30,30);
     }
     imageMode(CENTER);
-    image(getImage("cute/GemOrange"),25,25,30,50);
+    image(getImage("cute/GemOrange"),280,360,30,50);
     textAlign(LEFT);
     fill(0,0,0);
     textSize(30);
-    text(money,45,45);
+    
+    // Shop
+    text(money,305,380);
+    shop.draw();
+    if(shopOpen === false)
+    {
+        shop.draw();
+        fill(0, 0, 0);
+    }
+    if(shopOpen === true)
+    {
+        fill(0, 255, 128);
+        rect(7,66,350,150);
+        fill(0, 0, 0);
+        close.draw();
+        for (var i = 0; i < shopItem.length; ++i)
+        {
+            fill(255, 102, 102);
+            rect(i*100+10, 75, 90, 100);
+            fill(0, 0, 0);
+            text(shopItem[i].name, i*100+20, 80, 60, 60);
+            text(shopItem[i].price, i*100+20, 150);
+            image(shopItem[i].image, i*100+47,122, 50, 50);
+        }
+    }
 };
 
 // Khan Specials
@@ -592,5 +634,40 @@ draw = function() {
         background(255,0,0);
         textAlign(CENTER);
         text("Game Over", 200, 200);
+    }
+};
+
+
+    
+mouseClicked = function () {
+    if (gameScreen === 1) {
+        if(shopOpen === false){
+            shop.handleMouseClick();
+        }
+        else {
+            close.handleMouseClick();
+        }
+        if (isPlacingTower) {
+            towers.push(towerToBePlaced);
+            isPlacingTower = false;
+        }
+        if(shopOpen === true)
+        {
+            for (var i = 0; i < shopItem.length; ++i)
+            {
+                if(shopItem[i].price <= money && 
+                    mouseIsPressed && 
+                    mouseX > 10 && 
+                    mouseX < 100 && 
+                    mouseY > 70 && 
+                    mouseY < 170)
+                {
+                    shopOpen = false;
+                    towerToBePlaced = new Tower(basicTower, basicTower.bullet);
+                    money -= basicTower.cost;
+                    isPlacingTower = true;
+                }
+            }
+        }
     }
 };
