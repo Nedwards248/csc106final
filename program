@@ -467,17 +467,16 @@ var collisions = function () {
 var splashScreenTowers = function () {
     
     // Making Towers
-    
-    var basicTower1 = basicTower;
+    var basicTower1 = new Tower(basicTower, basicTower.bullet);
     basicTower1.x = 150;
     basicTower1.y = 150;
-    var basicTower2 = basicTower;
+    var basicTower2 = new Tower(basicTower, basicTower.bullet);
     basicTower2.x = 250;
     basicTower2.y = 150;
-    var basicTower3 = basicTower;
+    var basicTower3 = new Tower(basicTower, basicTower.bullet);
     basicTower3.x = 150;
     basicTower3.y = 250;
-    var basicTower4 = basicTower;
+    var basicTower4 = new Tower(basicTower, basicTower.bullet);
     basicTower4.x = 250;
     basicTower4.y = 250;
     
@@ -523,69 +522,69 @@ var shop = new Button({
 // Screens
 var drawSplashScreen = function () {
     
-    // //// Logistics
+    //// Logistics
     
-    // // Towers Shooting Bullets
-    // for (var i = 0; i < towers.length; i++) {
-    //     if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
-    //         bullets.push(towers[i].shoot(enemies));
-    //     }
-    // }
+    // Towers Shooting Bullets
+    for (var i = 0; i < towers.length; i++) {
+        if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
+            bullets.push(towers[i].shoot(enemies));
+        }
+    }
     
-    // // Spawing Enemies
-    // spawnEnemies();
+    // Spawing Enemies
+    spawnEnemies();
     
-    // // Collisions
-    // collisions();
+    // Collisions
+    collisions();
     
-    // // Moving Bullets
-    // for (var i = 0; i < bullets.length; i++) {
-    //     bullets[i].move();
-    // }
+    // Moving Bullets
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].move();
+    }
 
-    // //// Drawing
+    //// Drawing
     
-    // // Background
-    // background(85, 189, 103);
-    // for (var i = 0; i < grasses.length; i ++) {
-    //     stroke(6, 59, 10);
-    //     strokeWeight(1);
-    //     line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-10);
-    //     line(grasses[i].x-3, grasses[i].y, grasses[i].x-3, grasses[i].y-5);
-    //     line(grasses[i].x+3, grasses[i].y, grasses[i].x+3, grasses[i].y-5);
-    // }
+    // Background
+    background(85, 189, 103);
+    for (var i = 0; i < grasses.length; i ++) {
+        stroke(6, 59, 10);
+        strokeWeight(1);
+        line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-10);
+        line(grasses[i].x-3, grasses[i].y, grasses[i].x-3, grasses[i].y-5);
+        line(grasses[i].x+3, grasses[i].y, grasses[i].x+3, grasses[i].y-5);
+    }
     
-    // // Towers
-    // for (var i = 0; i < towers.length; i++) {
-    //     towers[i].draw();
-    // }
+    // Towers
+    for (var i = 0; i < towers.length; i++) {
+        towers[i].draw();
+    }
     
-    // // Bullets
-    // for (var i = 0; i < bullets.length; i++) {
-    //     bullets[i].draw();
+    // Bullets
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].draw();
         
-    //     // If out of bounds, or out of the towers range, delete it
-    //     if (bullets[i].x < 0    ||
-    //         bullets[i].x > 400  ||
-    //         bullets[i].y < 0    ||
-    //         bullets[i].y > 400  ||
-    //         bullets[i].outOfRange()) {
-    //         bullets.splice(i,1);
-    //         i--;
-    //     }
-    // }
+        // If out of bounds, or out of the towers range, delete it
+        if (bullets[i].x < 0    ||
+            bullets[i].x > 400  ||
+            bullets[i].y < 0    ||
+            bullets[i].y > 400  ||
+            bullets[i].outOfRange()) {
+            bullets.splice(i,1);
+            i--;
+        }
+    }
     
-    // // Enemies
-    // for (var i = 0; i < enemies.length; i++) {
-    //     enemies[i].draw();
-    // }
+    // Enemies
+    for (var i = 0; i < enemies.length; i++) {
+        enemies[i].draw();
+    }
     
-    // // Core
-    // imageMode(CENTER);
-    // image(getImage("space/planet"),200,200,50,50);
+    // Core
+    imageMode(CENTER);
+    image(getImage("space/planet"),200,200,50,50);
     
-    // // Shadow
-    // image(getImage("cute/ShadowEast"),-600,180,2000,900);
+    // Shadow
+    image(getImage("cute/ShadowEast"),-600,180,2000,900);
     
     // Button
     startButton.draw();
@@ -768,7 +767,7 @@ mouseClicked = function () {
                     mouseY < 170)
                 {
                     shopOpen = false;
-                    towerToBePlaced = shopItem[i].tower;
+                    towerToBePlaced = new Tower(shopItem[i].tower, shopItem[i].tower.bullet);
                     money -= shopItem[i].price;
                     isPlacingTower = true;
                 }
