@@ -10,9 +10,11 @@ var Button = function(config) {
     this.height = config.height || 50;
     this.label = config.label || "Click";
     this.onClick = config.onClick || function() {};
+    this.color = config.color || color(0, 234, 255);
 };
 Button.prototype.draw = function() {
-    fill(0, 234, 255);
+    rectMode(LEFT);
+    fill(this.color);
     rect(this.x, this.y, this.width, this.height, 5);
     fill(0, 0, 0);
     textSize(19);
@@ -351,18 +353,7 @@ var drawNickBitmoji = function(x,y,h) {
 // Basics
 var gameScreen = 0;
 var life = 3;
-var money = 1000;
-
-// Game Specific
-var coreFireRate = 500;
-var bullets = [];
-var lastTimeShot = 0;
-var enemies = [];
-var lastTimeEnemySpawn = 0;
-var enemySpawnRate = 100;
-var towers = [];
-var isPlacingTower = false;
-var towerToBePlaced;
+var money = 0;
 
 //// Towers
 
@@ -382,11 +373,37 @@ var flameThrowerBullet = new Bullet({damage: 20,
                                      size: 20,
                                      color: color(255, 140, 0)});
 var flameThrowerTower = new Tower({range: 75,
-                            fireRate: 50,
-                            image: getImage("cute/GemOrange")}, 
-                            flameThrowerBullet);
+                                   fireRate: 50,
+                                   image: getImage("cute/GemOrange")}, 
+                                   flameThrowerBullet);
 
 //// End
+
+// Game Specific
+var coreFireRate = 500;
+var bullets = [];
+var lastTimeShot = 0;
+var enemies = [];
+var lastTimeEnemySpawn = 0;
+var enemySpawnRate = 1000;
+var towers = [];
+var isPlacingTower = false;
+var towerToBePlaced;
+var shopOpen = false;
+var shopItem = [
+    {
+    name: "Basic",
+    tower: basicTower,
+    price: basicTower.cost,
+    image: basicTower.image
+    },
+    {
+    name: "Sniper",
+    tower: sniperTower,
+    price: sniperTower.cost,
+    image: sniperTower.image
+    }
+];
 
 // Misc
 var grasses = [];
@@ -398,91 +415,23 @@ var generateGrass = function () {
 };
 generateGrass();
 
-// Screens
-var drawSplashScreen = function () {
-    
-    //// Logistics
-    
-    // Buttons
-    var startButton = new Button({
-        x:125,
-        y:200,
-        label: "Start",
-        onClick: function () {
-            gameScreen = 1;
-        }
-    });
-    
-    // Handle Clicks
-    if (mouseIsPressed) {
-        startButton.handleMouseClick();
-    }
-
-    //// Drawing
-    
-    // Background
-    background(255,255,255);
-    
-    // Button
-    startButton.draw();
-    
-    // Title
-    fill(0,0,0);
-    textAlign(CENTER);
-    textSize(70);
-    text("Defend!",200,175);
-    
-    // Bitmojis
-    drawNickBitmoji(350,350,100);
-    drawBitmoji(90,-55,250);
+// Functions
+var resetGame = function () {
+    life = 3;
+    money = 0;
+    lastTimeEnemySpawn = 0;
+    enemies = [];
+    bullets = [];
+    towers = [];
 };
-var drawGameScreen = function () {
-    
-    //// Logistics
-    
-    // Building
-    if (keyIsPressed && !isPlacingTower) {
-        if (key.toString() === "1" && money >= basicTower.cost) {
-            towerToBePlaced = new Tower(basicTower, basicTower.bullet);
-            money -= basicTower.cost;
-            isPlacingTower = true;
-        } else if (key.toString() === "2" && money >= sniperTower.cost) {
-            towerToBePlaced = new Tower(sniperTower, sniperTower.bullet);
-            money -= sniperTower.cost;
-            isPlacingTower = true;
-        } else if (key.toString() === "3" && money >= flameThrowerTower.cost) {
-            towerToBePlaced = new Tower(flameThrowerTower, flameThrowerTower.bullet);
-            money -= flameThrowerTower.cost;
-            isPlacingTower = true;
-        }
-    }
-    if (mouseIsPressed && !keyIsPressed && isPlacingTower) {
-        towers.push(towerToBePlaced);
-        isPlacingTower = false;
-    }
-    
-    // Core Shooting Bullets
-    if (millis() - lastTimeShot > coreFireRate) {
-        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200, damage: 100});
-        bullets.push(bullet);
-        lastTimeShot = millis();
-    }
-    
-    // Towers Shooting Bullets
-    for (var i = 0; i < towers.length; i++) {
-        if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
-            bullets.push(towers[i].shoot(enemies));
-        }
-    }
-    
-    // Spawing Enemies
+var spawnEnemies = function () {
     if (millis() - lastTimeEnemySpawn > enemySpawnRate) {
         var enemy = new Enemy({});
         enemies.push(enemy);
         lastTimeEnemySpawn = millis();
     }
-    
-    // Collisions
+};
+var collisions = function () {
     for (var i = 0; i < enemies.length; i++) {
         // Core
         var coreHit = enemies[i].coreCollision();
@@ -513,6 +462,170 @@ var drawGameScreen = function () {
         } else {
             println("Error: Core Collision");
         }
+    }
+};
+var splashScreenTowers = function () {
+    
+    // Making Towers
+    var basicTower1 = new Tower(basicTower, basicTower.bullet);
+    basicTower1.x = 150;
+    basicTower1.y = 150;
+    var basicTower2 = new Tower(basicTower, basicTower.bullet);
+    basicTower2.x = 250;
+    basicTower2.y = 150;
+    var basicTower3 = new Tower(basicTower, basicTower.bullet);
+    basicTower3.x = 150;
+    basicTower3.y = 250;
+    var basicTower4 = new Tower(basicTower, basicTower.bullet);
+    basicTower4.x = 250;
+    basicTower4.y = 250;
+    
+    towers = [basicTower1,
+              basicTower2,
+              basicTower3,
+              basicTower4];
+};
+splashScreenTowers();
+
+// Buttons
+var startButton = new Button({
+    x:10,
+    y:60,
+    label: "Start",
+    color: color(255, 248, 56),
+    onClick: function () {
+        resetGame();
+        gameScreen = 1;
+    }
+});
+var close = new Button({
+    x:10,
+    y:10,
+    label: "Close",
+    color: color(255, 248, 56),
+    onClick: function () {
+        shopOpen = false;
+    }
+    
+});
+var shop = new Button({
+        x:10,
+        y:10,
+        label: "Shop",
+        color: color(255, 248, 56),
+        onClick: function () {
+            shopOpen = true;
+            
+        } 
+    });
+
+// Screens
+var drawSplashScreen = function () {
+    
+    //// Logistics
+    
+    // Towers Shooting Bullets
+    for (var i = 0; i < towers.length; i++) {
+        if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
+            bullets.push(towers[i].shoot(enemies));
+        }
+    }
+    
+    // Spawing Enemies
+    spawnEnemies();
+    
+    // Collisions
+    collisions();
+    
+    // Moving Bullets
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].move();
+    }
+
+    //// Drawing
+    
+    // Background
+    background(85, 189, 103);
+    for (var i = 0; i < grasses.length; i ++) {
+        stroke(6, 59, 10);
+        strokeWeight(1);
+        line(grasses[i].x, grasses[i].y, grasses[i].x, grasses[i].y-10);
+        line(grasses[i].x-3, grasses[i].y, grasses[i].x-3, grasses[i].y-5);
+        line(grasses[i].x+3, grasses[i].y, grasses[i].x+3, grasses[i].y-5);
+    }
+    
+    // Towers
+    for (var i = 0; i < towers.length; i++) {
+        towers[i].draw();
+    }
+    
+    // Bullets
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].draw();
+        
+        // If out of bounds, or out of the towers range, delete it
+        if (bullets[i].x < 0    ||
+            bullets[i].x > 400  ||
+            bullets[i].y < 0    ||
+            bullets[i].y > 400  ||
+            bullets[i].outOfRange()) {
+            bullets.splice(i,1);
+            i--;
+        }
+    }
+    
+    // Enemies
+    for (var i = 0; i < enemies.length; i++) {
+        enemies[i].draw();
+    }
+    
+    // Core
+    imageMode(CENTER);
+    image(getImage("space/planet"),200,200,50,50);
+    
+    // Shadow
+    image(getImage("cute/ShadowEast"),-600,180,2000,900);
+    
+    // Button
+    startButton.draw();
+    
+    // Title
+    fill(0,0,0);
+    textAlign(CENTER);
+    textSize(50);
+    text("Defend!",95,45);
+    
+    // Bitmojis
+    drawNickBitmoji(350,350,100);
+    drawBitmoji(90,-55,250);
+};
+var drawGameScreen = function () {
+    
+    //// Logistics
+    
+    // Core Shooting Bullets
+    if (millis() - lastTimeShot > coreFireRate) {
+        var bullet = new Bullet({xDis: mouseX - 200 , yDis:  mouseY - 200, damage: 100});
+        bullets.push(bullet);
+        lastTimeShot = millis();
+    }
+    
+    // Towers Shooting Bullets
+    for (var i = 0; i < towers.length; i++) {
+        if(millis() - towers[i].lastTimeShot > towers[i].fireRate) {
+            bullets.push(towers[i].shoot(enemies));
+        }
+    }
+    
+    // Spawing Enemies
+    spawnEnemies();
+    
+    // Collisions
+    collisions();
+    
+    // Moving Bullets
+    for (var i = 0; i < bullets.length; i++) {
+        bullets[i].move();
     }
     
     // Game Over Check
@@ -551,7 +664,6 @@ var drawGameScreen = function () {
     
     // Bullets
     for (var i = 0; i < bullets.length; i++) {
-        bullets[i].move();
         bullets[i].draw();
         
         // If out of bounds, or out of the towers range, delete it
@@ -582,11 +694,32 @@ var drawGameScreen = function () {
         image(getImage("space/healthheart"),290+40*i,30,30,30);
     }
     imageMode(CENTER);
-    image(getImage("cute/GemOrange"),25,25,30,50);
+    image(getImage("cute/GemOrange"),280,360,30,50);
     textAlign(LEFT);
     fill(0,0,0);
     textSize(30);
-    text(money,45,45);
+    
+    // Shop
+    text(money,305,380);
+    if (shopOpen === false) {
+        shop.draw();
+        fill(0, 0, 0);
+    }
+    if (shopOpen === true) {
+        fill(0, 255, 128);
+        rectMode(LEFT);
+        rect(7,66,350,150);
+        fill(0, 0, 0);
+        close.draw();
+        for (var i = 0; i < shopItem.length; ++i) {
+            fill(255, 102, 102);
+            rect(i*100+10, 75, 90, 100);
+            fill(0, 0, 0);
+            text(shopItem[i].name, i*100+20, 80, 60, 60);
+            text(shopItem[i].price, i*100+20, 150);
+            image(shopItem[i].image, i*100+47, 122, 50, 50);
+        }
+    }
 };
 
 // Khan Specials
@@ -599,5 +732,46 @@ draw = function() {
         background(255,0,0);
         textAlign(CENTER);
         text("Game Over", 200, 200);
+    }
+};
+mouseClicked = function () {
+    if (gameScreen === 0) {
+        // Buttons
+        startButton.handleMouseClick();
+    }
+    if (gameScreen === 1) {
+        // Shop Button
+        if(shopOpen === false){
+            shop.handleMouseClick();
+        }
+        else {
+            close.handleMouseClick();
+        }
+        
+        // Placing Towers
+        if (isPlacingTower) {
+            towers.push(towerToBePlaced);
+            isPlacingTower = false;
+        }
+        
+        // Buying from shop
+        if(shopOpen === true)
+        {
+            for (var i = 0; i < shopItem.length; ++i)
+            {
+                if(shopItem[i].price <= money && 
+                    mouseIsPressed && 
+                    mouseX > 10 + 100 * i && 
+                    mouseX < 100 + 100 * i && 
+                    mouseY > 70 && 
+                    mouseY < 170)
+                {
+                    shopOpen = false;
+                    towerToBePlaced = new Tower(shopItem[i].tower, shopItem[i].tower.bullet);
+                    money -= shopItem[i].price;
+                    isPlacingTower = true;
+                }
+            }
+        }
     }
 };
