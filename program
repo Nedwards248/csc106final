@@ -377,6 +377,13 @@ var flameThrowerTower = new Tower({range: 75,
                                    image: getImage("cute/GemOrange")}, 
                                    flameThrowerBullet);
 
+// Turret
+var turretBullet = new Bullet({damage: 15, 
+                                size: 10});
+var turretTower = new Tower({range: 50,
+                            fireRate: 100,
+                            image: getImage("cute/DoorTallClosed")}, turretBullet);
+
 //// End
 
 // Game Specific
@@ -384,6 +391,7 @@ var coreFireRate = 500;
 var bullets = [];
 var lastTimeShot = 0;
 var enemies = [];
+var numKills = 0;
 var lastTimeEnemySpawn = 0;
 var enemySpawnRate = 1000;
 var towers = [];
@@ -402,6 +410,12 @@ var shopItem = [
     tower: sniperTower,
     price: sniperTower.cost,
     image: sniperTower.image
+    },
+    {
+    name: "Turret",
+    tower: turretTower,
+    price: turretTower.cost,
+    image: turretTower.image
     }
 ];
 
@@ -449,7 +463,13 @@ var collisions = function () {
                     j--;
                     enemies.splice(i,1);
                     i--;
+                    if(gameScreen === 1)
+                    {
+                        numKills += 1;
+                    }
+                    
                     break;
+                    
                 } else if (bulletHit === "damage") {
                     bullets.splice(j,1);
                     j--;
@@ -708,7 +728,7 @@ var drawGameScreen = function () {
     if (shopOpen === true) {
         fill(0, 255, 128);
         rectMode(LEFT);
-        rect(7,66,350,150);
+        rect(7,66,350,250);
         fill(0, 0, 0);
         close.draw();
         for (var i = 0; i < shopItem.length; ++i) {
