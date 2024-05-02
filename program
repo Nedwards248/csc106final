@@ -366,6 +366,7 @@ var basicTower = new Tower({}, basicBullet);
 var sniperBullet = new Bullet({damage: 100,
                                color: color(255, 221, 0)});
 var sniperTower = new Tower({range: 200,
+                             cost: 100,
                              image: getImage("cute/StoneBlockTall")}, 
                              sniperBullet);
 
@@ -388,6 +389,8 @@ var turretTower = new Tower({range: 50,
 //// End
 
 // Game Specific
+var timeStarted = 0;
+var timeEnded = 0;
 var coreFireRate = 500;
 var bullets = [];
 var lastTimeShot = 0;
@@ -438,6 +441,10 @@ var resetGame = function () {
     enemies = [];
     bullets = [];
     towers = [];
+    numKills = 0;
+    shopOpen = false;
+    isPlacingTower = false;
+    timeStarted = millis();
 };
 var spawnEnemies = function () {
     if (millis() - lastTimeEnemySpawn > enemySpawnRate) {
@@ -541,11 +548,13 @@ var shop = new Button({
     });
 var tryAgain = new Button({
         x:125,
-        y:210,
+        y:240,
         label: "Try Again?",
         color: color(238, 255, 0),
         onClick: function() {
             gameScreen = 0;
+            resetGame();
+            splashScreenTowers();
         }
     });
 
@@ -661,6 +670,7 @@ var drawGameScreen = function () {
     // Game Over Check
     if (life < 1) {
         gameScreen = 2;
+        timeEnded = millis();
     }
     
     //// Drawing
@@ -736,18 +746,22 @@ var drawGameScreen = function () {
         fill(0, 0, 0);
     }
     if (shopOpen === true) {
-        fill(0, 255, 128);
+        fill(0, 196, 98);
         rectMode(LEFT);
-        rect(7,66,350,250);
+        rect(10,65,350,140);
         fill(0, 0, 0);
         close.draw();
         for (var i = 0; i < shopItem.length; ++i) {
-            fill(255, 102, 102);
-            rect(i*100+10, 75, 90, 100);
+            fill(232, 97, 97);
+            if(money >= shopItem[i].price)
+            {
+                fill(176, 176, 176);
+            }
+            rect(i*110+30, 85, 90, 100);
             fill(0, 0, 0);
-            text(shopItem[i].name, i*100+20, 80, 60, 60);
-            text(shopItem[i].price, i*100+20, 150);
-            image(shopItem[i].image, i*100+47, 122, 50, 50);
+            text(shopItem[i].name, i*110+40, 90, 60, 60);
+            text(shopItem[i].price, i*110+40, 160);
+            image(shopItem[i].image, i*110+67, 133, 50, 50);
         }
     }
 };
@@ -755,7 +769,11 @@ var drawGameOverScreen = function(){
     background(255,0,0);
     textAlign(CENTER);
     textSize(50);
-    text("GAME OVER", 200, 200);
+    text("GAME OVER", 200, 100);
+    textSize(20);
+    text("Enemies killed: " + numKills, 200, 160);
+    text("Towers placed: " + towers.length, 200, 185);
+    text("Time survived: " + round((timeEnded - timeStarted)/1000) + "s", 200, 210);
     tryAgain.draw();
 };
 // Khan Specials
@@ -799,10 +817,10 @@ mouseClicked = function () {
             {
                 if(shopItem[i].price <= money && 
                     mouseIsPressed && 
-                    mouseX > 10 + 100 * i && 
-                    mouseX < 100 + 100 * i && 
-                    mouseY > 70 && 
-                    mouseY < 170)
+                    mouseX > 30 + 110 * i && 
+                    mouseX < 120 + 110 * i && 
+                    mouseY > 85 && 
+                    mouseY < 185)
                 {
                     shopOpen = false;
                     towerToBePlaced = new Tower(shopItem[i].tower, shopItem[i].tower.bullet);
