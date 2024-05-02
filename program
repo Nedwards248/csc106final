@@ -768,7 +768,6 @@ draw = function() {
         drawGameOverScreen();
     }
 };
-gameScreen = 2;
 mouseClicked = function () {
     if (gameScreen === 0) {
         // Buttons
