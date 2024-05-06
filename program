@@ -420,6 +420,12 @@ var shopItem = [
     tower: turretTower,
     price: turretTower.cost,
     image: turretTower.image
+    },
+    {
+    name: "Flamethrower",
+    tower: flameThrowerTower,
+    price: flameThrowerTower.cost,
+    image: flameThrowerTower.image
     }
 ];
 
@@ -748,7 +754,7 @@ var drawGameScreen = function () {
     if (shopOpen === true) {
         fill(0, 196, 98);
         rectMode(LEFT);
-        rect(10,65,350,140);
+        rect(10,65,380,140);
         fill(0, 0, 0);
         close.draw();
         for (var i = 0; i < shopItem.length; ++i) {
@@ -757,11 +763,13 @@ var drawGameScreen = function () {
             {
                 fill(176, 176, 176);
             }
-            rect(i*110+30, 85, 90, 100);
+            rect(i*95+20, 85, 75, 100);
             fill(0, 0, 0);
-            text(shopItem[i].name, i*110+40, 90, 60, 60);
-            text(shopItem[i].price, i*110+40, 160);
-            image(shopItem[i].image, i*110+67, 133, 50, 50);
+            textSize(10);
+            text(shopItem[i].name, i*95+25, 90, 60, 60);
+            textSize(15);
+            text(shopItem[i].price, i*95+25, 160);
+            image(shopItem[i].image, i*95+47, 133, 40, 40);
         }
     }
 };
@@ -817,8 +825,8 @@ mouseClicked = function () {
             {
                 if(shopItem[i].price <= money && 
                     mouseIsPressed && 
-                    mouseX > 30 + 110 * i && 
-                    mouseX < 120 + 110 * i && 
+                    mouseX > 20 + 95 * i && 
+                    mouseX < 115 + 95 * i && 
                     mouseY > 85 && 
                     mouseY < 185)
                 {
