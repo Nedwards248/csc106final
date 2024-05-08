@@ -774,6 +774,10 @@ var drawGameScreen = function () {
         gameScreen = 2;
         timeEnded = millis();
     }
+    if((millis()-timeStarted)/1000 >= 600){
+        gameScreen = 3;
+        timeEnded = millis();
+    }
     
     //// Drawing
     
@@ -885,6 +889,17 @@ var drawGameOverScreen = function(){
     text("Time survived: " + round((timeEnded - timeStarted)/1000) + "s", 200, 210);
     tryAgain.draw();
 };
+var drawGameWinScreen = function(){
+    background(0, 255, 64);
+    textAlign(CENTER);
+    textSize(50);
+    text("YOU WIN!", 200, 100);
+    textSize(20);
+    text("Enemies killed: " + numKills, 200, 160);
+    text("Towers placed: " + towers.length, 200, 185);
+    text("Time survived: " + round((timeEnded - timeStarted)/1000) + "s", 200, 210);
+    tryAgain.draw();
+};
 
 // Khan Specials
 draw = function() {
@@ -894,6 +909,8 @@ draw = function() {
         drawGameScreen();
     } else if (gameScreen === 2) {
         drawGameOverScreen();
+    } else if (gameScreen === 3) {
+        drawGameWinScreen();
     }
 };
 mouseClicked = function () {
@@ -934,7 +951,7 @@ mouseClicked = function () {
                 }
             }
         }
-    } else if(gameScreen === 2) {
+    } else if(gameScreen === 2 || gameScreen === 3) {
         tryAgain.handleMouseClick();
     }
 };
