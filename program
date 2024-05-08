@@ -517,7 +517,7 @@ var spawnEnemies = function () {
         } else if (difficulty === 3) {
             var rand = floor(random(0,101));
             if (rand <= 10) {
-                enemy = new Enemy(fastEnemy);
+                enemy = new Enemy(bigEnemy);
             } else if (rand <= 40) {
                 enemy = new Enemy(fastEnemy);
             } else {
